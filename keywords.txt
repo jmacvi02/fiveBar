@@ -1,0 +1,7 @@
+fiveBarKin  KEYWORD1
+forKin  KEYWORD2
+invKin  KEYWORD2
+exteriorAngle   KEYWORD2
+magnitude   KEYWORD2
+lawofCosLen KEYWORD2
+lawofCosAng KEYWORD2
