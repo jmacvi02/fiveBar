@@ -11,7 +11,7 @@
 #include "fiveBarKin.h"
 
 /*
-  Function Name:     forKin (GIT PUSH ORGIN MASTER)
+  Function Name:     forKin
   Purpose:           Determine the end effector position given angles of base joint angles
   Returns:           the end effector position for the given direction (either x or y)
   Inputs:            the base joint angles, 'x' for x coord of end effector, or 'y' for y coord of end effector
