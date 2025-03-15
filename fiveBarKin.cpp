@@ -52,6 +52,34 @@ float fiveBarKin::invKin(float x, float y, char baseJoint) {
 }
 
 /*
+  Function Name:     setPointPIDContorl
+  Purpose:           calculate the effort to send the motors to reach a set point with the end effect
+  Returns:           P*error+I*errorint+D*errordot
+  Inputs:            the current end effector position, current motor angles, and the motor to find the effort of
+  Helper functions:  set point error
+  NOTES:  NEED to CHANGE TIME FOr ThetA DOT SO IT UPDAteS iwth VArY*NG LOOPS
+
+*/
+float fiveBarKin::setPointPIDControl(float x, float y, float thetaRCurr, float thetaLCurr, char motor) {
+  
+  if (tolower(motor) == 'r') {
+    setPointError(x, y, thetaRCurr, thetaLCurr, motor); //updates error, errordot, and interror
+    //difference between right motor angle at desired set point and current angle reading
+    return Kp * errorR + Kd * errorRdot; 
+  }
+  else if (tolower(motor) == 'l') {
+    setPointError(x, y, thetaRCurr, thetaLCurr, motor);
+    //difference between left motor angle at desired set point and current angle reading
+    return Kp * errorL + Kd * errorLdot; 
+  }
+  else
+    //if incorrect input, error zero to prevent movement
+    return 0.0;
+}
+
+
+
+/*
   Function Name:     exteriorAngle
   Purpose:           determine the exterior angle of the left or right joint for forward kinematics
   Returns:           the exterior angle of the desired joint
@@ -122,3 +150,25 @@ float fiveBarKin::lawofCosAng(float a, float b, float c) {
   return acos((sq(a) + sq(b) - sq(c)) / (2*a*b));
 }
 
+/*
+  Function Name:     setPointError
+  Purpose:           calculate error, errordot, and interror for PIDcontrol to a set point
+  Returns:           N?A
+  Inputs:            the current end effector position, current motor angles, and the motor to find the effort of
+  Helper functinos:  invKin
+*/
+void fiveBarKin::setPointError(float x, float y, float thetaRCurr, float thetaLCurr, char motor) {
+  
+  if (tolower(motor) == 'r') {
+    errorR = thetaRCurr - invKin(x,y,motor);
+    errorRdot = ((errorR - errorRPrev) / 10 ) * 1000; // CHANGE THIS TO 
+    errorRPrev = errorR;
+    //difference between right motor angle at desired set point and current angle reading 
+  }
+  else if (tolower(motor) == 'l') {
+    errorL = thetaLCurr - invKin(x,y,motor);
+    errorLdot = ((errorL- errorLPrev) / 10 ) * 1000; // CHANGE THIS TO 
+    errorLPrev = errorL;
+    //difference between left motor angle at desired set point and current angle reading
+  } 
+}

@@ -21,14 +21,26 @@ class fiveBarKin{
 
     float forKin(float theta1, float theta2, char direction);
     float invKin(float x, float y, char baseJoint);
+    float setPointPIDControl(float x, float y, float thetaRCurr, float thetaLCurr, char motor);
+
 
   private:
     float pi = 3.14159;
+    float Kp = 15;
+    float Ki = 0;
+    float Kd = 1;
+    float errorR = 0;
+    float errorRdot = 0;
+    float errorRPrev = 0;
+    float errorL = 0;
+    float errorLdot = 0;
+    float errorLPrev = 0;
 
     float exteriorAngle(float theta1, float theta2, char elbowJoint);
     float magnitude(float x, float y, char motor);
     float lawofCosLen(float a, float b, float theta);
     float lawofCosAng(float a, float b, float c);
+    void setPointError(float x, float y, float thetaRCurr, float thetaLCurr, char motor);
 };
 
 #endif
