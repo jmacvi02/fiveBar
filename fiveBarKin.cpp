@@ -19,20 +19,17 @@
   Helper functinos:  exteriorAngle
   Other:             returns 1000 if an invalid direction is choosen
 */
-float fiveBarKin::forKin(float thetaR, float thetaL, char axis) {
-  float phiR = exteriorAngle(thetaR,thetaL,'r');
-  float phiL = exteriorAngle(thetaR,thetaL,'l');
-  if (tolower(axis) == 'x') {
-    float xr = L0/2 + L1*cos(thetaR) + L3*cos(thetaR+phiR); // right arm forwardkin
-    float xl = -L0/2 + L2*cos(thetaL) + L4*cos(thetaL-phiL); // left arm forward kin
-    return (xr + xl)/2;      //returning average of forwardkin from left and right
-  }
-  else if (tolower(axis) == 'y') {
-    float yr = L1*sin(thetaR) + L3*sin(thetaR+phiR);
-    float yl = L2*sin(thetaL) + L4*sin(thetaL-phiL);
-    return (yr + yl)/2;      //returning average of forwardkin from left and right
-  }
-  return 1000; //return if incorrect char input
+Eigen::Vector2d fiveBarKin::forKin(double q1, double q2) {
+  double q3 = q1 + exteriorAngle(q1,q2)(0);
+  double q4 = q2 - exteriorAngle(q1,q2)(1);
+  double xr = L0/2 + L1*cos(q1) + L3*cos(q3); // right arm forwardkin
+  double xl = -L0/2 + L2*cos(q2) + L4*cos(q4); // left arm forward kin
+  double yr = L1*sin(q1) + L3*sin(q3);
+  double yl = L2*sin(q2) + L4*sin(q4);
+
+  Eigen::Vector2d endEffPos;
+  endEffPos << (xr+xl)/2, (yr+yl)/2; //returning average of forwardkin from left and right
+  return endEffPos; //return if incorrect char input
 }
 
 /*
@@ -43,13 +40,12 @@ float fiveBarKin::forKin(float thetaR, float thetaL, char axis) {
                      or 'l' for the left side angle
   Helper functinos:  magnitude 
 */
-float fiveBarKin::invKin(float x, float y, char side) {
-  if (tolower(side) == 'l')
-    return atan2(y,x+(L0/2)) + acos( (sq(L2) + sq(magnitude(x,y,side)) - sq(L4)) / (2*L2*magnitude(x,y,side) ));
-  else if (tolower(side) == 'r')
-    return atan2(y,x-(L0/2)) - acos((sq(L1) + sq(magnitude(x,y,side)) - sq(L3))/(2*L1*magnitude(x,y,side)));
-  else
-    return 1000;
+Eigen::Vector2d fiveBarKin::invKin(double x, double y) {
+  Eigen::Vector2d qs;
+  double q2 = atan2(y,x+(L0/2)) + acos( (sq(L2) + sq(magnitude(x,y)(1)) - sq(L4)) / (2*L2*magnitude(x,y)(1) ));
+  double q1 = atan2(y,x-(L0/2)) - acos((sq(L1) + sq(magnitude(x,y)(1)) - sq(L3))/(2*L1*magnitude(x,y)(0)));
+  qs << q1, q2;
+  return qs;
 }
 
 /*
@@ -59,14 +55,11 @@ float fiveBarKin::invKin(float x, float y, char side) {
   Inputs:            the two base joint angles, and side of the desired distal joint 
   Helper functinos:  exteriorAngle 
 */
-float fiveBarKin::distalAngle(float thetaR, float thetaL, char side) {
-  if (tolower(side == 'r')) {
-    return thetaR + exteriorAngle(thetaR, thetaL, side);
-  }
-  else if (tolower(side == 'l')) {
-    return thetaL - exteriorAngle(thetaR, thetaL, side);
-  }
-  return 1000;
+Eigen::Vector2d fiveBarKin::distalAngle(double thetaR, double thetaL) {
+  Eigen::Vector2d distalAngles;
+  distalAngles << thetaR + exteriorAngle(thetaR, thetaL)(0), thetaL - exteriorAngle(thetaR, thetaL)(1);
+
+  return distalAngles;
 }
 
 
@@ -107,25 +100,18 @@ float fiveBarKin::setPointPIDControl(float x, float y, float thetaRCurr, float t
   Notes:             This calculation current takes the 10 point moving average of the velocities in order
                      to smooth out the signal. 
 */
-float fiveBarKin::baseVelocity(float thetaR, float thetaL, char motor) {
-  // for right motor angular velocity
-  if(tolower(motor) == 'r') {
+Eigen::Vector2d fiveBarKin::baseVelocity(double q1, double q2) {
     for(int i = 9; i > 0; i--) { //moving back all values one spot in array
-      thetaRs[i] = thetaRs[i-1];
+      q1s[i] = q1s[i-1];
+      q2s[i] = q2s[i-1];
     }
-    thetaRs[0] = thetaR; // updating new value of thetaL
-    return (thetaRs[0] - thetaRs[9]) / (0.0022 * 10 ); // 10 point moving average of velocity
+    q1s[0] = q1; // updating new value of thetaR
+    q2s[0] = q2; // updating new value of thetaL
+    Eigen::Vector2d qdot;
+    qdot << (q1s[0] - q1s[9]) / (0.0022 * 10 ), (q2s[0] - q2s[9]) / (0.0022 * 10);
+    return qdot;
   }
-  //for left motor angular velocity
-  else if(tolower(motor) == 'l') {  
-    for(int i = 9; i > 0; i--) { //moving back all values one spot in array
-      thetaLs[i] = thetaLs[i-1];
-    }
-    thetaLs[0] = thetaL; // updating new value of thetaL
-    return (thetaLs[0] - thetaLs[9]) / (0.002 * 10); // 10 point moving average of velocity, dt=2ms
-  }
-  return 1000;
-}
+
 
 /*
   Function Name:     elbowVelocity
@@ -135,17 +121,14 @@ float fiveBarKin::baseVelocity(float thetaR, float thetaL, char motor) {
                      right elbow joint ext angle, or 'l' r'. 
   Helper functinos:  N/A
 */
-float fiveBarKin::distalVelocity(float q1, float q2, float q3, float q4, float q1d, float q2d, char side) {
-
-  if(tolower(side) == 'r') {
-    return (-L1*q1d*sin(q1-q4) + L2*q2d*sin(q2-q4)) / (L3*sin(q3-q4));
-  }
-  else if(tolower(side) == 'l') {
-    return (-L1*q1d*sin(q1-q3) + L2*q2d*sin(q2-q3)) / (L4*sin(q3-q4));
-  }
-  else {
-    return 1000;
-  }
+Eigen::Vector2d fiveBarKin::distalVelocity(double q1, double q2, double q1d, double q2d) {
+  Eigen::Vector2d qDist, distVel;
+  qDist = distalAngle(q1, q2);
+  distVel << (-L1*q1d*sin(q1-qDist(1)) + L2*q2d*sin(q2-qDist(1))) / (L3*sin(qDist(0)-qDist(1))),
+            (-L1*q1d*sin(q1-qDist(0)) + L2*q2d*sin(q2-qDist(0))) / (L4*sin(qDist(0)-qDist(1)));
+    //return (-L1*q1d*sin(q1-q4) + L2*q2d*sin(q2-q4)) / (L3*sin(q3-q4));
+    //return (-L1*q1d*sin(q1-q3) + L2*q2d*sin(q2-q3)) / (L4*sin(q3-q4));
+  return distVel;
 }
 
 
@@ -157,13 +140,13 @@ float fiveBarKin::distalVelocity(float q1, float q2, float q3, float q4, float q
   Helper functinos:  N/A
   Notes:             
 */
-Eigen::Vector2f fiveBarKin::endEffVelocity(float q1, float q2, float q3, float q4, float q1d, float q2d, float q3d, float q4d) {
-  Eigen::Matrix2f JR, JL;
-  Eigen::Vector2f qdR, qdL, endR, endL;
-
+Eigen::Vector2d fiveBarKin::endEffVelocity(double q1, double q2, double q1d, double q2d, double q3d, double q4d) {
+  Eigen::Matrix2d JR, JL;
+  Eigen::Vector2d qDist, qdR, qdL, endR, endL;
+  qDist = distalAngle(q1,q2);
   // the two jacobians, one for each arm
-  JR << -L1*sin(q1), -L3*sin(q3), L1*cos(q1), L3*cos(q3);
-  JL << -L2*sin(q2), -L4*sin(q4), L2*cos(q2), L4*cos(q4);
+  JR << -L1*sin(q1), -L3*sin(qDist(0)), L1*cos(q1), L3*cos(qDist(0));
+  JL << -L2*sin(q2), -L4*sin(qDist(1)), L2*cos(q2), L4*cos(qDist(1));
 
   qdR << q1d, q3d;
   qdL << q2d, q4d;
@@ -191,49 +174,38 @@ Eigen::Vector2f fiveBarKin::endEffVelocity(float q1, float q2, float q3, float q
                      for the right elbow joint ext angle
   Helper functinos:  lawofCosLen nad lawofCosAng
 */
-float fiveBarKin::exteriorAngle(float thetaR, float thetaL, char elbowJoint) {
+Eigen::Vector2d fiveBarKin::exteriorAngle(double q1, double q2) {
   //need to use 3 inscribed triangles within the robot to determine the interior angle
-  float intAngle = 0;
-  float d1 = 0;
-  float alpha = 0;
-  float d2 = 0;
-  float beta = 0;
-  float c = 0;
 
-  if (tolower(elbowJoint) == 'r') {
-    d1 = lawofCosLen(L0,L1,pi-thetaR); // dist. from left motor to right joint
-    alpha = lawofCosAng(d1,L1,L0); // angle formed by d1 at right joint
-    d2 = lawofCosLen(d1,L2,thetaL-thetaR+alpha); // dist. from left join to right joint
-    beta = lawofCosAng(d1,d2,L2); // angle formed by d1 and d2 at right joint
-    c = lawofCosAng(d2, L3, L4); // angle formed by d2 and L3 at right joint
-  }
-  else if (tolower(elbowJoint) == 'l') {
-    d1 = lawofCosLen(L0,L1,thetaL); // dist. from right motor to left joint
-    alpha = lawofCosAng(d1,L2,L0); // angle formed by d1 at right joint
-    d2 = lawofCosLen(d1,L1,thetaL-thetaR+alpha); // dist. from left join to right joint
-    beta = lawofCosAng(d1,d2,L1); // angle formed by d1 and d2 at right joint
-    c = lawofCosAng(d2, L4, L3); // angle formed by d2 and L3 at right joint
-  }
-  else {
-    return 10000;
-  }
+  double d1R = lawofCosLen(L0,L1,pi-q1); // dist. from left motor to right joint
+  double alphaR = lawofCosAng(d1R,L1,L0); // angle formed by d1 at right joint
+  double d2R = lawofCosLen(d1R,L2,q2-q1+alphaR); // dist. from left join to right joint
+  double betaR = lawofCosAng(d1R,d2R,L2); // angle formed by d1 and d2 at right joint
+  double cR = lawofCosAng(d2R, L3, L4); // angle formed by d2 and L3 at right joint
+  
+  double d1L = lawofCosLen(L0,L1,q2); // dist. from right motor to left joint
+  double alphaL = lawofCosAng(d1L,L2,L0); // angle formed by d1 at right joint
+  double d2L = lawofCosLen(d1L,L1,q2-q1+alphaL); // dist. from left join to right joint
+  double betaL = lawofCosAng(d1L,d2L,L1); // angle formed by d1 and d2 at right joint
+  double cL = lawofCosAng(d2L, L4, L3); // angle formed by d2 and L3 at right joint
 
-  intAngle = pi - (alpha + beta + c);
-  return intAngle;
+  Eigen::Vector2d extAngles;
+  extAngles << pi - (alphaR + betaR + cR), pi - (alphaL + betaL + cL);
+  return extAngles;
 }
 
 /*
   Function Name:     magnitude
-  Purpose:           to get encoder counts to line up with a desired zero and flip the direction of counts
+  Purpose:           
   Helper functinos:  N/A
 */
-float fiveBarKin::magnitude(float x, float y, char motor) {
-  if (tolower(motor) == 'l')
-    return sqrt(sq(x+(L0/2))+sq(y));
-  else if (tolower(motor) == 'r')
-    return sqrt(sq(x-(L0/2))+sq(y));
-  else
-    return 0;
+Eigen::Vector2d fiveBarKin::magnitude(double x, double y) {
+  Eigen::Vector2d mags;
+  double magL = sqrt(sq(x+(L0/2))+sq(y));
+  double magR =  sqrt(sq(x-(L0/2))+sq(y));
+  mags << magR, magL;
+
+  return mags;
 }
 
 /*
@@ -241,7 +213,7 @@ float fiveBarKin::magnitude(float x, float y, char motor) {
   Purpose:           find the length opposite of angle theta where a, b, c forms a triangle
   Helper functinos:  N/A
 */
-float fiveBarKin::lawofCosLen(float a, float b, float theta) {
+double fiveBarKin::lawofCosLen(double a, double b, double theta) {
   return sqrt(sq(a)+sq(b)-2*a*b*cos(theta));
 }
 
@@ -250,7 +222,7 @@ float fiveBarKin::lawofCosLen(float a, float b, float theta) {
   Purpose:           find the angle opposite of length c where a, b, c forms a triangle
   Helper functinos:  N/A
 */
-float fiveBarKin::lawofCosAng(float a, float b, float c) {
+double fiveBarKin::lawofCosAng(double a, double b, double c) {
   return acos((sq(a) + sq(b) - sq(c)) / (2*a*b));
 }
 
@@ -261,7 +233,7 @@ float fiveBarKin::lawofCosAng(float a, float b, float c) {
   Inputs:            the current end effector position, current motor angles, and the motor to find the effort of
   Helper functinos:  invKin
 
-void fiveBarKin::setPointError(float x, float y, float thetaRCurr, float thetaLCurr, char motor) {
+void fiveBarKin::setPointError(double x, double y, double thetaRCurr, double thetaLCurr, char motor) {
   
   if (tolower(motor) == 'r') {
     errorR = thetaRCurr - invKin(x,y,motor);

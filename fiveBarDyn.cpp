@@ -23,10 +23,10 @@
   Helper functinos:  N/A
   Notes:             
 */
-Eigen::Matrix2f fiveBarDyn::centCoriolMatrix(float q1, float q2, float q3, float q4, float q1d, float q2d, float q3d, float q4d) {
-    Eigen::Matrix2f as, ac, as34, ac34, a12, a34, m12, m34, i12, i34, cs34, c34, a12d, asd, acd, as34d, ac34d, a34d, a3412, a3412d; 
-    Eigen::Matrix2f D, CQ, C, B;
-    Eigen::Vector2f sc1, sc2;
+Eigen::Matrix2d fiveBarDyn::centCoriolMatrix(double q1, double q2, double q3, double q4, double q1d, double q2d, double q3d, double q4d) {
+    Eigen::Matrix2d as, ac, as34, ac34, a12, a34, m12, m34, i12, i34, cs34, c34, a12d, asd, acd, as34d, ac34d, a34d, a3412, a3412d; 
+    Eigen::Matrix2d D, CQ, C, B;
+    Eigen::Vector2d sc1, sc2;
   
     as << Lc1*sin(q1), 0, 0, Lc2*sin(q2);
     ac << Lc1*cos(q1), 0, 0, Lc2*cos(q2);
@@ -71,10 +71,9 @@ Eigen::Matrix2f fiveBarDyn::centCoriolMatrix(float q1, float q2, float q3, float
 
 
 
-Eigen::Matrix2f fiveBarDyn::massMatrix(float q1, float q2, float q3, float q4) {
-    Eigen::Matrix2f m12, m34, i12, i34, as, ac, as34, ac34, a12, a34, a3412;
-    Eigen::Matrix2f M;
-
+Eigen::Matrix2d fiveBarDyn::massMatrix(double q1, double q2, double q3, double q4) {
+    Eigen::Matrix2d m12, m34, i12, i34, as, ac, as34, ac34, a12, a34, a3412;
+    Eigen::Matrix2d M;
     as << Lc1*sin(q1), 0, 0, Lc2*sin(q2);
     ac << Lc1*cos(q1), 0, 0, Lc2*cos(q2);
     as34 << Lc3*sin(q3), 0, 0, Lc4*sin(q4);
