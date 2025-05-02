@@ -5,8 +5,6 @@
                   kinematics operations for a five bar robot. Several of these functions are
                   not written using the most efficient c++ methods to account for ME students
                   lack of experience with the language (e.g. pass by reference functions)
-  TODO:           Convert multi use function (e.g returns left or right depending on paramter) 
-                  into functions that return vectors of values with eigen library. 
 */
 
 #include "fiveBarKin.h"
