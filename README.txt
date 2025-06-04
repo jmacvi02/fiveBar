@@ -42,7 +42,10 @@ List of Features:
 
 ////////////////////////
 External Libraries Used:
-Eigen 
+1. ArudinoEigenDense 
+- Arduinos adaptation of the EigenDense library. There is lots of great documentation for how the 
+  library works (https://eigen.tuxfamily.org/index.php?title=Main_Page).
+- This library simplifies the representaiton of the calculations to matricies 
 
 //////////////////////////////
 List of Compatible Environments:
